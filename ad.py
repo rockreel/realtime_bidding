@@ -8,6 +8,15 @@ KEY_SPACE_REPORT = 'report:'
 REPORT_PERSIST_DAYS = 30
 
 
+def get_ad_by_id(ad_id):
+    return redis_client.hgetall(KEY_SPACE_AD + ad_id)
+
+
+def get_active_ad_ids():
+    for id in redis_client.smembers('active_ad_ids'):
+        yield id
+
+
 def get_dest_url(ad_id):
     # Return destination url for given ad id.
     return redis_client.hget(KEY_SPACE_AD + ad_id, 'dest_url')

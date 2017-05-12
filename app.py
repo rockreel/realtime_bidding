@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 
 from flask import Flask
 from flask_redis import FlaskRedis
@@ -16,7 +15,7 @@ else:
     app.config.from_object('config.DevelopmentConfig')
 
 # Setup external services.
-redis_client = FlaskRedis(app)
+redis_client = FlaskRedis(app, charset='utf-8', decode_responses=True)
 statsd_client = statsd.StatsClient(app.config['STATSD_URL'])
 
 # Setup logging to log to console, so that it can be easily collected from
@@ -38,9 +37,11 @@ else:
     import bidder
     import tracker
 
+
 # Common routes and setups.
 @app.errorhandler(Exception)
 def handle_request(e):
+    statsd_client.incr('%s.error' % os.getenv('APP', 'bidder'))
     app.logger.exception(e)
     raise e
 

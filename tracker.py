@@ -1,17 +1,14 @@
-from datetime import datetime
-
 from flask import request
 from flask import redirect
 from flask import make_response
 
 import ad
 from app import app
-from app import redis_client
 from app import statsd_client
 import bid
 
 
-@app.route('/impression')
+@app.route('/impression', methods=['GET'])
 @statsd_client.timer('tracker.impression')
 def impression():
     bid.record_event(request.args['bid_id'], 'impression')
@@ -19,7 +16,7 @@ def impression():
     return make_response('', 200)
 
 
-@app.route('/click')
+@app.route('/click', methods=['GET'])
 @statsd_client.timer('tracker.click')
 def click():
     bid.record_event(request.args['bid_id'], 'click')
