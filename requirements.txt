@@ -9,4 +9,5 @@ packaging==16.8
 pyparsing==2.2.0
 redis==2.10.5
 six==1.10.0
+statsd==3.2.1
 Werkzeug==0.12.1

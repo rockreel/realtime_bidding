@@ -4,10 +4,10 @@ import sys
 
 from flask import Flask
 from flask_redis import FlaskRedis
+import statsd
 
 
 app = Flask(__name__)
-redis_store = FlaskRedis(app)
 
 # Config app.
 if os.getenv('ENV') == 'prod':
@@ -15,7 +15,12 @@ if os.getenv('ENV') == 'prod':
 else:
     app.config.from_object('config.DevelopmentConfig')
 
-# Setup logging.
+# Setup external services.
+redis_store = FlaskRedis(app)
+statsd_client = statsd.StatsClient(app.config['STATSD_URL'])
+
+# Setup logging to log to console, so that it can be easily collected from
+# docker.
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter(
@@ -33,7 +38,7 @@ else:
     import bidder
     import tracker
 
-
+# Common routes and setups.
 @app.errorhandler(Exception)
 def handle_request(e):
     app.logger.exception(e)
