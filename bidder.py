@@ -1,16 +1,19 @@
 from app import app
-
-
-@app.route('/')
-def index():
-    return 'Realtime Bidding V1'
+from app import redis_store
 
 
 @app.route('/bid')
 def bid():
+    app.logger.info('bid')
     return 'bid'
 
 
-@app.route('/confirm')
+@app.route('/win_notice')
 def confirm():
-    return 'confirm'
+    app.logger.info('win notice')
+    return 'win notice'
+
+
+@app.route('/error')
+def error():
+    raise Exception('Boo!')

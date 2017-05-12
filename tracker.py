@@ -1,4 +1,5 @@
 from app import app
+from app import redis_store
 
 
 @app.route('/impression')
