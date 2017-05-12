@@ -16,7 +16,7 @@ else:
     app.config.from_object('config.DevelopmentConfig')
 
 # Setup external services.
-redis_store = FlaskRedis(app)
+redis_client = FlaskRedis(app)
 statsd_client = statsd.StatsClient(app.config['STATSD_URL'])
 
 # Setup logging to log to console, so that it can be easily collected from
