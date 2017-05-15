@@ -16,7 +16,9 @@ def bid_():
     ad_id = next(iter(ad.get_active_ad_ids()))
     ad_ = ad.get_ad_by_id(ad_id)
     ad.incr_report(ad_id, 'bids', 1)
-    return jsonify(bid.generate_response(ad_, bid_request, bid_id))
+    bid_response = bid.generate_response(ad_, bid_request, bid_id)
+    bid.record_response(bid_response)
+    return jsonify(bid_response)
 
 
 @app.route('/win_notice', methods=['GET'])

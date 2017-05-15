@@ -62,6 +62,12 @@ def record_request(bid_request):
     return bid_id
 
 
+def record_response(bid_id, bid_response):
+    # Record bid response.
+    redis_client.hset(
+        KEY_SPACE_BID + bid_id, 'response', json.dumps(bid_response))
+
+
 def record_event(bid_id, event):
     # Record given event in stored bid entry.
     redis_client.hset(KEY_SPACE_BID + bid_id, event, 1)
