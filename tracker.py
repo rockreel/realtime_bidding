@@ -11,15 +11,19 @@ import bid
 @app.route('/impression', methods=['GET'])
 @statsd_client.timer('tracker.impression')
 def impression():
-    bid.record_event(request.args['bid_id'], 'impression')
-    ad.incr_report(request.args['ad_id'], 'impressions', 1)
+    bid_id = request.args['bid_id']
+    bid.record_event(bid_id, 'impression')
+    ad_id = request.args['ad_id']
+    ad.incr_report(ad_id, 'impressions', 1)
     return make_response('', 200)
 
 
 @app.route('/click', methods=['GET'])
 @statsd_client.timer('tracker.click')
 def click():
-    bid.record_event(request.args['bid_id'], 'click')
-    ad.incr_report(request.args['ad_id'], 'clicks', 1)
-    return make_response(redirect(ad.get_dest_url(request.args['ad_id'])))
+    bid_id = request.args['bid_id']
+    bid.record_event(bid_id, 'click')
+    ad_id = request.args['ad_id']
+    ad.incr_report(ad_id, 'clicks', 1)
+    return make_response(redirect(ad.get_ad(ad_id)['dest_url']))
 

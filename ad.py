@@ -12,7 +12,7 @@ def get_ads():
         for ad_id in redis_client.smembers('ad_ids')]
 
 
-def get_ad_by_id(ad_id):
+def get_ad(ad_id):
     return redis_client.hgetall(KEY_SPACE_AD + str(ad_id))
 
 
@@ -36,17 +36,12 @@ def create_or_update_ad(ad_id, dest_url, image_src, width, height, cpm,
     return ad_id
 
 
-def remove_ad(ad_id):
+def delete_ad(ad_id):
     pipe = redis_client.pipeline(transaction=True)
-    pipe.rem(KEY_SPACE_AD + str(ad_id))
+    pipe.delete(KEY_SPACE_AD + str(ad_id))
     pipe.srem('ad_ids', ad_id)
     pipe.execute()
     return
-
-
-def get_dest_url(ad_id):
-    # Return destination url for given ad id.
-    return redis_client.hget(KEY_SPACE_AD + ad_id, 'dest_url')
 
 
 def incr_report(ad_id, field, amount):

@@ -12,7 +12,7 @@
             <h1>Add Ad</h1>
         {% endif %}
 
-        <form method="post" action="/ads/{{ ad.id }}">
+        <form method="post" action="{% if ad %}/ads/{{ ad.id }}/update{% else %}/ads/add{% endif %}">
             <a href="/ads"> << all ads </a>
             <table border="1" cellpadding="10">
                 <tr>
@@ -75,7 +75,7 @@
             <input type="submit" value="save">
         </form>
         {% if ad %}
-            <form method="delete" action="/ads/{{ ad.id }}">
+            <form method="post" action="/ads/{{ ad.id }}/delete">
                 <input type="submit" value="delete">
             </form>
         {% endif %}

@@ -12,12 +12,10 @@ import bid
 @statsd_client.timer('bidder.bid')
 def bid_():
     bid_request = request.json
-    bid_id = bid.record_request(bid_request)
-    ad_id = next(iter(ad.get_active_ad_ids()))
-    ad_ = ad.get_ad_by_id(ad_id)
+    ad_id, bid_id, bid_response = bid.generate_response(bid_request)
     ad.incr_report(ad_id, 'bids', 1)
-    bid_response = bid.generate_response(ad_, bid_request, bid_id)
-    bid.record_response(bid_response)
+    bid.store_request(bid_id, bid_request)
+    bid.store_response(bid_id, bid_response)
     return jsonify(bid_response)
 
 
