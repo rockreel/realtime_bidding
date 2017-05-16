@@ -25,7 +25,7 @@ def bid_():
 @statsd_client.timer('bidder.win_notice')
 def win_notice():
     bid.persist_request(request.args['bid_id'])
-    ad.incr_report(request.args['ad_id'], 'bid_successes', 1)
+    ad.incr_report(request.args['ad_id'], 'wons', 1)
     ad.incr_report(request.args['ad_id'], 'spend', float(request.args['price']))
     return make_response('', 200)
 

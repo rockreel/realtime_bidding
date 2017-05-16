@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Realtime Bidding Ads</title>
+    </head>
+
+    <body>
+        <h1>Realtime Bidding Ads</h1>
+        <a href="/ads/0"> >> add ad </a>
+        <table border="1" cellpadding="10">
+            <tr>
+                <th>id</th>
+                <th>dest url</th>
+                <th>width</th>
+                <th>height</th>
+                <th>image</th>
+                <th>cpm</th>
+                <th>daily budget</th>
+                <th>spend</th>
+                <th>bids</th>
+                <th>wons</th>
+                <th>impressions</th>
+                <th>clicks</th>
+            </tr>
+            {% for ad in ads %}
+                <tr>
+                    <td><a href="/ads/{{ ad.id }}">{{ ad.id }}</a></td>
+                    <td><a href="{{ ad.dest_url }}">dest url</a></td>
+                    <td>{{ ad.width }}</td>
+                    <td>{{ ad.height }}</td>
+                    <td><img src="{{ ad.image_src }}" width="{{ ad.width }}" height="{{ ad.height }}"></img></td>
+                    <td>${{ ad.cpm }}</td>
+                    <td>${{ ad.daily_budget }}</td>
+                    <td>${{ ad.spend }}</td>
+                    <td>{{ ad.bids }}</td>
+                    <td>{{ ad.wons }}</td>
+                    <td>{{ ad.impressions }}</td>
+                    <td>{{ ad.clicks }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </body>
+
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Ad {{ ad.id }}</title>
+    </head>
+
+    <body>
+        {% if ad %}
+            <h1>Ad {{ ad.id }}</h1>
+        {% else %}
+            <h1>Add Ad</h1>
+        {% endif %}
+
+        <form method="post" action="/ads/{{ ad.id }}">
+            <a href="/ads"> << all ads </a>
+            <table border="1" cellpadding="10">
+                <tr>
+                    <td>dest url</td>
+                    <td><input type="text" name="dest_url" value="{{ ad.dest_url }}"></input></td>
+                </tr>
+                <tr>
+                    <td>width</td>
+                    <td><input type="text" name="width" value="{{ ad.width }}"></input></td>
+                </tr>
+                <tr>
+                    <td>height</td>
+                    <td><input type="text" name="height" value="{{ ad.height }}"></input></td>
+                </tr>
+                <tr>
+                    <td>image src</td>
+                    <td>
+                        <input type="text" name="image_src" value="{{ ad.image_src }}"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>image</td>
+                    <td>
+                        <img src="{{ ad.image_src }}" width="{{ ad.width }}" height="{{ ad.height }}"></img>
+                    </td>
+                </tr>
+                <tr>
+                    <td>cpm</td>
+                    <td>
+                        $<input type="text" name="cpm" value="{{ ad.cpm }}"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>daily budget</td>
+                    <td>
+                        $<input type="text" name="daily_budget" value="{{ ad.daily_budget }}"></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>spend</td>
+                    <td>${{ ad.spend }}</td>
+                </tr>
+                <tr>
+                    <td>bids</td>
+                    <td>{{ ad.bids }}</td>
+                </tr>
+                <tr>
+                    <td>wons</td>
+                    <td>{{ ad.wons }}</td>
+                </tr>
+                <tr>
+                    <td>impressions</td>
+                    <td>{{ ad.impressions }}</td>
+                </tr>
+                <tr>
+                    <td>clicks</td>
+                    <td>{{ ad.clicks }}</td>
+                </tr>
+            </table>
+            <input type="submit" value="save">
+        </form>
+        {% if ad %}
+            <form method="delete" action="/ads/{{ ad.id }}">
+                <input type="submit" value="delete">
+            </form>
+        {% endif %}
+    </body>
+
+</html>

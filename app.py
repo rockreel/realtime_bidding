@@ -33,9 +33,12 @@ if os.getenv('APP') == 'bidder':
     import bidder
 elif os.getenv('APP') == 'tracker':
     import tracker
+elif os.getenv('APP') == 'monitor':
+    import tracker
 else:
     import bidder
     import tracker
+    import monitor
 
 
 # Common routes and setups.
