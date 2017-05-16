@@ -29,27 +29,27 @@ def generate_response(bid_request):
             <img src="%s" border="0" style="display: none;"/>
         </a>""" % (
             '%s?ad_id=%s&bid_id=%s' % (
-                app.config['CLICK_URL'], ad['id'], bid_id),
-            ad['width'],
-            ad['height'],
-            ad['image_src'],
+                app.config['CLICK_URL'], ad.id, bid_id),
+            ad.width,
+            ad.height,
+            ad.image_src,
             '%s?ad_id=%s&bid_id=%s' % (
-                app.config['IMPRESSION_URL'], ad['id'], bid_id),
+                app.config['IMPRESSION_URL'], ad.id, bid_id),
             )
 
     bids = [
         {
-            'price': float(ad['cpm']),
+            'price': ad.cpm,
             'impid': bid_request['imp'][0]['id'],
             'id': bid_id,
-            'crid': ad['id'],
-            'cid': ad['id'],
+            'crid': ad.id,
+            'cid': ad.id,
             'adm': ad_markup,
-            'adomain': [urlparse(ad['dest_url']).hostname],
+            'adomain': [urlparse(ad.dest_url).hostname],
             'nurl':
                 '%s?ad_id=%s&bid_id=%s&price=${AUCTION_PRICE}' % (
-                    app.config['WIN_NOTICE_URL'], ad['id'], bid_id),
-            'iurl': ad['image_src'],
+                    app.config['WIN_NOTICE_URL'], ad.id, bid_id),
+            'iurl': ad.image_src,
         }
     ]
 
@@ -60,7 +60,7 @@ def generate_response(bid_request):
             {'bid': bids},
         ],
     }
-    return ad['id'], bid_id, bid_response
+    return ad.id, bid_id, bid_response
 
 
 def persist_request(bid_id):
