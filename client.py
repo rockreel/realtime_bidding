@@ -20,37 +20,48 @@ parser.add_argument('-c', '--click_through_rate', dest='click_through_rate',
 parser.add_argument('-w', '--win_rate', dest='win_rate',
                     type=float, default=0.5,
                     help='Win rate to mock exchange auction win.')
+args = parser.parse_args()
+
+
+def process_bid(bid):
+    imp_id = bid['impid']
+    price = bid['price']
+    print('Impression %s' % imp_id)
+    print('Bidding price: $%s' % price)
+    ad_markup = bid['adm']
+    soup = BeautifulSoup(ad_markup, 'html.parser')
+    print('Ad Markup:\n %s' % soup.prettify())
+
+    # Mock auction won.
+    if random.random() < args.win_rate:
+        print('Auction won!')
+        nurl = bid['nurl'].replace('${AUCTION_PRICE}', str(price))
+        print('Ping win notice: %s' % nurl)
+        requests.get(nurl)
+        for img in soup.find_all('img'):
+            print('Ping image: %s' % img['src'])
+            requests.get(img['src'])
+
+        # Mock ad click.
+        if random.random() < args.click_through_rate:
+            print('User click!')
+            for a in soup.find_all('a'):
+                print('Click: %s' % a['href'])
+                requests.get(a['href'])
 
 
 def main():
-    args = parser.parse_args()
     with open(args.request_file) as f:
         for line in f:
+            print('Send bid to %s' % args.bidder_url)
             st = time.time()
             response = requests.post(
                 args.bidder_url, json=json.loads(line)).json()
             print('Latency: %s ms' % ((time.time() - st)*1000))
-            price = response['seatbid'][0]['bid'][0]['price']
-            ad_markup = response['seatbid'][0]['bid'][0]['adm']
-            soup = BeautifulSoup(ad_markup, 'html.parser')
-            print('Ad Markup:\n %s' % soup.prettify())
-
-            # Won an auction, call win notice and load images.
-            if random.random() < args.win_rate:
-                nurl = response['seatbid'][0]['bid'][0]['nurl']
-                nurl = nurl.replace('${AUCTION_PRICE}', str(price / 1000.0))
-                print('Ping win notice: %s' % nurl )
-                requests.get(nurl)
-                for img in soup.find_all('img'):
-                    print('Ping image: %s' % img['src'])
-                    requests.get(img['src'])
-
-                # Click an ad.
-                if random.random() < args.click_through_rate:
-                    for a in soup.find_all('a'):
-                        print('Click: %s' % a['href'])
-                        requests.get(a['href'])
-
+            print('Process bids:\n')
+            for bid in response['seatbid'][0]['bid']:
+                process_bid(bid)
+            print('\n\n')
             time.sleep(3)
 
 

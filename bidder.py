@@ -12,8 +12,8 @@ import bid
 @statsd_client.timer('bidder.bid')
 def bid_():
     bid_request = request.json
-    ad_id, bid_id, bid_response = bid.generate_response(bid_request)
-    ad.incr_report(ad_id, 'bids', 1)
+    bid_id, bid_response, ad_ids = bid.generate_response(bid_request)
+    [ad.incr_report(ad_id, 'bids', 1) for ad_id in ad_ids]
     bid.store_request(bid_id, bid_request)
     bid.store_response(bid_id, bid_response)
     return jsonify(bid_response)
@@ -24,6 +24,7 @@ def bid_():
 def win_notice():
     bid.persist_request(request.args['bid_id'])
     ad.incr_report(request.args['ad_id'], 'wons', 1)
-    ad.incr_report(request.args['ad_id'], 'spend', float(request.args['price']))
+    ad.incr_report(request.args['ad_id'], 'spend',
+                   float(request.args['price'])/1000.0)
     return make_response('', 200)
 

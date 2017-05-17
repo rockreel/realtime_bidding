@@ -14,44 +14,69 @@ PERSIST_SHORT_SECONDS = 60
 PERSIST_LONG_SECONDS = 24 * 3600 * 3
 
 
-def select_ad(bid_request):
-    # Naive strategy to randomly select an ad for bid response.
-    return random.choice(ad.get_ads())
+def select_ads(bid_request):
+    # The core bidding logic to match ads in inventory with impressions in the
+    # request. Returns a list of (impression id, ad) to generate bid response.
+    request_sizes = set(
+        [(i['banner']['w'], i['banner']['h']) for i in bid_request['imp']])
+    available_ads = filter(
+        lambda a:
+            (a.width, a.height) in request_sizes and
+            ad.get_today_spend(a.id) < a.daily_budget,  # Still have budget.
+        ad.get_ads()
+    )
+
+    imp_ad_list = []
+    for imp in bid_request['imp']:
+        fit_ads = list(filter(
+            lambda x:
+                x.width == imp['banner']['w'] and
+                x.height == imp['banner']['h'],
+            available_ads
+        ))
+        # Naive strategy to randomly select one from all eligible ads.
+        if fit_ads:
+            imp_ad_list.append((imp['id'], random.choice(fit_ads)))
+
+    return imp_ad_list
 
 
 def generate_response(bid_request):
-    # Return selected ad id, generated bid id and bid response.
+    # Return generated bid id, bid response and selected ad ids.
     bid_id = str(uuid4())
-    ad = select_ad(bid_request)
-    ad_markup = """
-        <a href="%s">
-            <img width="%s" height="%s" src="%s" alt=""/>
-            <img src="%s" border="0" style="display: none;"/>
-        </a>""" % (
-            '%s?ad_id=%s&bid_id=%s' % (
-                app.config['CLICK_URL'], ad.id, bid_id),
-            ad.width,
-            ad.height,
-            ad.image_src,
-            '%s?ad_id=%s&bid_id=%s' % (
-                app.config['IMPRESSION_URL'], ad.id, bid_id),
-            )
+    bids = []
+    ad_ids = []
+    for imp_id, ad in select_ads(bid_request):
+        ad_ids.append(ad.id)
+        ad_markup = """
+            <a href="%s">
+                <img width="%s" height="%s" src="%s" alt=""/>
+                <img src="%s" border="0" style="display: none;"/>
+            </a>""" % (
+                '%s?ad_id=%s&bid_id=%s' % (
+                    app.config['CLICK_URL'], ad.id, bid_id),
+                ad.width,
+                ad.height,
+                ad.image_src,
+                '%s?ad_id=%s&bid_id=%s' % (
+                    app.config['IMPRESSION_URL'], ad.id, bid_id),
+                )
 
-    bids = [
-        {
-            'price': ad.cpm,
-            'impid': bid_request['imp'][0]['id'],
-            'id': bid_id,
-            'crid': ad.id,
-            'cid': ad.id,
-            'adm': ad_markup,
-            'adomain': [urlparse(ad.dest_url).hostname],
-            'nurl':
-                '%s?ad_id=%s&bid_id=%s&price=${AUCTION_PRICE}' % (
-                    app.config['WIN_NOTICE_URL'], ad.id, bid_id),
-            'iurl': ad.image_src,
-        }
-    ]
+        bids.append(
+            {
+                'price': ad.cpm,
+                'impid': imp_id,
+                'id': bid_id,
+                'crid': ad.id,
+                'cid': ad.id,
+                'adm': ad_markup,
+                'adomain': [urlparse(ad.dest_url).hostname],
+                'nurl':
+                    '%s?ad_id=%s&bid_id=%s&price=${AUCTION_PRICE}' % (
+                        app.config['WIN_NOTICE_URL'], ad.id, bid_id),
+                'iurl': ad.image_src,
+            }
+        )
 
     bid_response = {
         'id': bid_request['id'],
@@ -60,7 +85,7 @@ def generate_response(bid_request):
             {'bid': bids},
         ],
     }
-    return ad.id, bid_id, bid_response
+    return bid_id, bid_response, ad_ids
 
 
 def persist_request(bid_id):

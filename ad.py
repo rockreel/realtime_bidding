@@ -62,6 +62,13 @@ def delete_ad(ad_id):
     return
 
 
+def get_today_spend(ad_id):
+    today = datetime.utcnow().date().isoformat()
+    return float(
+        redis_client.hget(KEY_SPACE_REPORT + '%s:%s' % (ad_id, today), 'spend')
+        or 0.0)
+
+
 def incr_report(ad_id, field, amount):
     # Increase ad report for given ad id and field.
     ad_key = KEY_SPACE_AD + str(ad_id)
