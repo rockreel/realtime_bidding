@@ -16,7 +16,10 @@ def bid_():
     [ad.incr_report(ad_id, 'bids', 1) for ad_id in ad_ids]
     bid.store_request(bid_id, bid_request)
     bid.store_response(bid_id, bid_response)
-    return jsonify(bid_response)
+    if bid_response:
+        return jsonify(bid_response)
+    else:
+        return make_response('', 204)
 
 
 @app.route('/win_notice', methods=['GET'])

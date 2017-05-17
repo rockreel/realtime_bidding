@@ -47,44 +47,47 @@ def generate_response(bid_request):
     bids = []
     ad_ids = []
     for imp_id, ad in select_ads(bid_request):
+        subbid_id = str(uuid4())
         ad_ids.append(ad.id)
         ad_markup = """
             <a href="%s">
                 <img width="%s" height="%s" src="%s" alt=""/>
                 <img src="%s" border="0" style="display: none;"/>
             </a>""" % (
-                '%s?ad_id=%s&bid_id=%s' % (
-                    app.config['CLICK_URL'], ad.id, bid_id),
+                '%s?ad_id=%s&bid_id=%s&imp_id=%s' % (
+                    app.config['CLICK_URL'], ad.id, bid_id, imp_id),
                 ad.width,
                 ad.height,
                 ad.image_src,
-                '%s?ad_id=%s&bid_id=%s' % (
-                    app.config['IMPRESSION_URL'], ad.id, bid_id),
+                '%s?ad_id=%s&bid_id=%s&imp_id=%s' % (
+                    app.config['IMPRESSION_URL'], ad.id, bid_id, imp_id),
                 )
 
         bids.append(
             {
                 'price': ad.cpm,
                 'impid': imp_id,
-                'id': bid_id,
+                'id': subbid_id,
                 'crid': ad.id,
                 'cid': ad.id,
                 'adm': ad_markup,
                 'adomain': [urlparse(ad.dest_url).hostname],
                 'nurl':
-                    '%s?ad_id=%s&bid_id=%s&price=${AUCTION_PRICE}' % (
-                        app.config['WIN_NOTICE_URL'], ad.id, bid_id),
+                    '%s?ad_id=%s&bid_id=%s&imp_id=%s&price=${AUCTION_PRICE}' % (
+                        app.config['WIN_NOTICE_URL'], ad.id, bid_id, imp_id),
                 'iurl': ad.image_src,
             }
         )
-
-    bid_response = {
-        'id': bid_request['id'],
-        'bidid': bid_id,
-        'seatbid': [
-            {'bid': bids},
-        ],
-    }
+    if bids:
+        bid_response = {
+            'id': bid_request['id'],
+            'bidid': bid_id,
+            'seatbid': [
+                {'bid': bids},
+            ],
+        }
+    else:
+        bid_response = {}
     return bid_id, bid_response, ad_ids
 
 
@@ -107,6 +110,6 @@ def store_response(bid_id, bid_response):
         KEY_SPACE_BID + bid_id, 'response', json.dumps(bid_response))
 
 
-def record_event(bid_id, event):
+def record_event(bid_id, imp_id, event):
     # Record given event in stored bid entry.
-    redis_client.hset(KEY_SPACE_BID + bid_id, event, 1)
+    redis_client.hset(KEY_SPACE_BID + bid_id, event + ':' + imp_id, 1)

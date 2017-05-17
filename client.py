@@ -20,6 +20,9 @@ parser.add_argument('-c', '--click_through_rate', dest='click_through_rate',
 parser.add_argument('-w', '--win_rate', dest='win_rate',
                     type=float, default=0.5,
                     help='Win rate to mock exchange auction win.')
+parser.add_argument('-i', '--interval', dest='interval',
+                    type=int, default=1,
+                    help='Interval second to send request.')
 args = parser.parse_args()
 
 
@@ -56,13 +59,17 @@ def main():
             print('Send bid to %s' % args.bidder_url)
             st = time.time()
             response = requests.post(
-                args.bidder_url, json=json.loads(line)).json()
+                args.bidder_url, json=json.loads(line))
             print('Latency: %s ms' % ((time.time() - st)*1000))
-            print('Process bids:\n')
-            for bid in response['seatbid'][0]['bid']:
-                process_bid(bid)
-            print('\n\n')
-            time.sleep(3)
+            if response.status_code == 204:
+                print('No bids.\n')
+            else:
+                print('Process bids:')
+                for bid in response.json()['seatbid'][0]['bid']:
+                    process_bid(bid)
+                print('\n\n')
+
+            time.sleep(args.interval)
 
 
 if __name__ == '__main__':
