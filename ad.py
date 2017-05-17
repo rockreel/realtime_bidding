@@ -23,12 +23,15 @@ class Ad(object):
         self.impressions = int(ad_dict.get('impressions', 0))
         self.clicks = int(ad_dict.get('clicks', 0))
 
-    def is_available(self):
-        # If ad is available for bidding.
+    @property
+    def spend_today(self):
         report_key = KEY_SPACE_REPORT + '%s:%s' % (
             self.id, datetime.utcnow().date().isoformat())
-        curr_spend = float(redis_client.hget(report_key, 'spend') or 0)
-        return curr_spend < self.daily_budget
+        return float(redis_client.hget(report_key, 'spend') or 0)
+
+    def is_available(self):
+        # If ad is available for bidding.
+        return self.spend_today < self.daily_budget
 
 
 def get_ads():
@@ -91,13 +94,15 @@ def incr_report(ad_id, field, amount):
     today = datetime.utcnow().date().isoformat()
     report_key = KEY_SPACE_REPORT + '%s:%s' % (ad_id, today)
 
+    pipe = redis_client.pipeline(transaction=True)
     if type(amount) == float:
-        redis_client.hincrbyfloat(ad_key, field, amount)
-        redis_client.hincrbyfloat(report_key, field, amount)
+        pipe.hincrbyfloat(ad_key, field, amount)
+        pipe.hincrbyfloat(report_key, field, amount)
     elif type(amount) == int:
         redis_client.hincrby(ad_key, field, amount)
         redis_client.hincrby(report_key, field, amount)
     else:
         raise Exception('Not support type %s' % type(amount))
+    pipe.execute()
 
     return

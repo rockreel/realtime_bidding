@@ -1,14 +1,12 @@
 FROM ubuntu
 
-ENV DEBIAN_FRONTEND noninteractive
-
 RUN apt-get update
-RUN apt-get install -y python python-pip nginx gunicorn supervisor
+RUN apt-get install -y python3 python3-pip nginx supervisor
 
 # Setup flask application
 WORKDIR /app
 ADD . /app
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Setup nginx
 RUN rm /etc/nginx/sites-enabled/default

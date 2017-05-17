@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 
 parser = argparse.ArgumentParser(description='Realtime Bidding Test Client')
 parser.add_argument('-b', '--bidder_url', dest='bidder_url', type=str,
-                    default='http://localhost:5000/bid',
+                    default='http://localhost/bid',
                     help='Bidder URL.')
 parser.add_argument('-r', '--request_file', dest='request_file', type=str,
                     default='requests.json',
@@ -52,14 +52,15 @@ def process_bid(bid):
                 requests.get(a['href'])
 
 
-def main():
-    with open(args.request_file) as f:
+def send_bids(filename):
+    with open(filename) as f:
         for line in f:
             print('Send bid request to %s' % args.bidder_url)
             st = time.time()
             response = requests.post(
                 args.bidder_url, json=json.loads(line))
-            print('Latency: %s ms' % ((time.time() - st)*1000))
+            print('Latency: %0.4f ms' % ((time.time() - st) * 1000))
+
             if response.status_code == 204:
                 print('No bids.\n\n')
             else:
@@ -69,6 +70,11 @@ def main():
                 print('\n\n')
 
             time.sleep(args.interval)
+
+
+def main():
+    while True:
+        send_bids(args.request_file)
 
 
 if __name__ == '__main__':
