@@ -30,10 +30,9 @@ def process_bid(bid):
     imp_id = bid['impid']
     price = bid['price']
     print('Impression %s' % imp_id)
-    print('Bidding price: $%s' % price)
-    ad_markup = bid['adm']
-    soup = BeautifulSoup(ad_markup, 'html.parser')
-    print('Ad Markup:\n %s' % soup.prettify())
+    print('Price: $%s' % price)
+    soup = BeautifulSoup(bid['adm'], 'html.parser')
+    print('Ad Markup:\n%s' % soup.prettify())
 
     # Mock auction won.
     if random.random() < args.win_rate:
@@ -56,13 +55,13 @@ def process_bid(bid):
 def main():
     with open(args.request_file) as f:
         for line in f:
-            print('Send bid to %s' % args.bidder_url)
+            print('Send bid request to %s' % args.bidder_url)
             st = time.time()
             response = requests.post(
                 args.bidder_url, json=json.loads(line))
             print('Latency: %s ms' % ((time.time() - st)*1000))
             if response.status_code == 204:
-                print('No bids.\n')
+                print('No bids.\n\n')
             else:
                 print('Process bids:')
                 for bid in response.json()['seatbid'][0]['bid']:

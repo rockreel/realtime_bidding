@@ -7,7 +7,8 @@ KEY_SPACE_REPORT = 'report:'
 
 
 class Ad(object):
-    # Wrapper around ad stored in Redis as hash.
+    # Wrapper around ad object stored in Redis as hash. Mainly for type
+    # conversion and sanity check.
     def __init__(self, ad_dict):
         self.id = int(ad_dict['id'])
         self.dest_url = ad_dict['dest_url']
@@ -22,6 +23,13 @@ class Ad(object):
         self.impressions = int(ad_dict.get('impressions', 0))
         self.clicks = int(ad_dict.get('clicks', 0))
 
+    def is_available(self):
+        # If ad is available for bidding.
+        report_key = KEY_SPACE_REPORT + '%s:%s' % (
+            self.id, datetime.utcnow().date().isoformat())
+        curr_spend = float(redis_client.hget(report_key, 'spend') or 0)
+        return curr_spend < self.daily_budget
+
 
 def get_ads():
     return [
@@ -34,20 +42,35 @@ def get_ad(ad_id):
     return Ad(ad_dict) if ad_dict else None
 
 
-def create_or_update_ad(ad_id, dest_url, image_src, width, height, cpm,
-                        daily_budget):
-    if not ad_id:
+def create_ad(dest_url, image_src, width, height, cpm, daily_budget):
+    return _create_or_update_ad(
+        None, dest_url, image_src, width, height, cpm, daily_budget)
+
+
+def update_ad(ad_id, **kwargs):
+    return _create_or_update_ad(ad_id, **kwargs)
+
+
+def _create_or_update_ad(ad_id, dest_url, image_src, width, height, cpm,
+                         daily_budget):
+    ad = {}
+    if dest_url is not None:
+        ad['dest_url'] = dest_url
+    if image_src is not None:
+        ad['image_src'] = image_src
+    if width is not None:
+        ad['width'] = int(width)
+    if height is not None:
+        ad['height'] = int(height)
+    if cpm is not None:
+        ad['cpm'] = float(cpm)
+    if daily_budget is not None:
+        ad['daily_budget'] = float(daily_budget)
+    if ad_id is None:
         ad_id = redis_client.incr('ad_id_seq')
+    ad['id'] = int(ad_id)
+
     pipe = redis_client.pipeline(transaction=True)
-    ad = {
-        'id': ad_id,
-        'dest_url': dest_url,
-        'image_src': image_src,
-        'width': width,
-        'height': height,
-        'cpm': cpm,
-        'daily_budget': daily_budget,
-    }
     pipe.hmset(KEY_SPACE_AD + str(ad_id), ad)
     pipe.sadd('ad_ids', ad_id)
     pipe.execute()
@@ -60,13 +83,6 @@ def delete_ad(ad_id):
     pipe.srem('ad_ids', ad_id)
     pipe.execute()
     return
-
-
-def get_today_spend(ad_id):
-    today = datetime.utcnow().date().isoformat()
-    return float(
-        redis_client.hget(KEY_SPACE_REPORT + '%s:%s' % (ad_id, today), 'spend')
-        or 0.0)
 
 
 def incr_report(ad_id, field, amount):

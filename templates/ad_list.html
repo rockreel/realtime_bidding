@@ -2,7 +2,9 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <meta http-equiv="refresh" content="3">
+        {% if auto_refresh == '1' %}
+            <meta http-equiv="refresh" content="5">
+        {% endif %}
         <title>Realtime Bidding Ads</title>
     </head>
 
@@ -30,7 +32,7 @@
                     <td><a href="{{ ad.dest_url }}">dest url</a></td>
                     <td>{{ ad.width }}</td>
                     <td>{{ ad.height }}</td>
-                    <td><img src="{{ ad.image_src }}" width="{{ ad.width }}" height="{{ ad.height }}"></img></td>
+                    <td><img src="{{ ad.image_src }}" width="{{ ad.width }}" height="{{ ad.height }}"/></td>
                     <td>${{ ad.cpm }}</td>
                     <td>${{ ad.daily_budget }}</td>
                     <td>${{ ad.spend }}</td>
@@ -41,6 +43,11 @@
                 </tr>
             {% endfor %}
         </table>
+        {% if auto_refresh == '1' %}
+            <a href="/ads/?auto_refresh=0">turn off auto refresh</a>
+        {% else %}
+            <a href="/ads/?auto_refresh=1">turn on auto refresh</a>
+        {% endif %}
     </body>
 
 </html>

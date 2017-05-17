@@ -1,6 +1,6 @@
 import json
 import random
-from urllib.parse import urlparse
+from urllib import parse as urlparser
 from uuid import uuid4
 
 import ad
@@ -16,27 +16,20 @@ PERSIST_LONG_SECONDS = 24 * 3600 * 3
 
 def select_ads(bid_request):
     # The core bidding logic to match ads in inventory with impressions in the
-    # request. Returns a list of (impression id, ad) to generate bid response.
-    request_sizes = set(
-        [(i['banner']['w'], i['banner']['h']) for i in bid_request['imp']])
-    available_ads = filter(
-        lambda a:
-            (a.width, a.height) in request_sizes and
-            ad.get_today_spend(a.id) < a.daily_budget,  # Still have budget.
-        ad.get_ads()
-    )
+    # request. Return a list of (impression id, ad) to generate bid response.
+    available_ads = [a for a in ad.get_ads() if a.is_available()]
 
     imp_ad_list = []
     for imp in bid_request['imp']:
-        fit_ads = list(filter(
-            lambda x:
-                x.width == imp['banner']['w'] and
-                x.height == imp['banner']['h'],
-            available_ads
-        ))
+        # Only bid on banner.
+        if not imp.get('banner'):
+            continue
         # Naive strategy to randomly select one from all eligible ads.
-        if fit_ads:
-            imp_ad_list.append((imp['id'], random.choice(fit_ads)))
+        selected_ads = [
+            a for a in available_ads
+            if a.width == imp['banner']['w'] and a.height == imp['banner']['h']]
+        if selected_ads:
+            imp_ad_list.append((imp['id'], random.choice(selected_ads)))
 
     return imp_ad_list
 
@@ -47,37 +40,20 @@ def generate_response(bid_request):
     bids = []
     ad_ids = []
     for imp_id, ad in select_ads(bid_request):
-        subbid_id = str(uuid4())
         ad_ids.append(ad.id)
-        ad_markup = """
-            <a href="%s">
-                <img width="%s" height="%s" src="%s" alt=""/>
-                <img src="%s" border="0" style="display: none;"/>
-            </a>""" % (
-                '%s?ad_id=%s&bid_id=%s&imp_id=%s' % (
-                    app.config['CLICK_URL'], ad.id, bid_id, imp_id),
-                ad.width,
-                ad.height,
-                ad.image_src,
-                '%s?ad_id=%s&bid_id=%s&imp_id=%s' % (
-                    app.config['IMPRESSION_URL'], ad.id, bid_id, imp_id),
-                )
-
-        bids.append(
-            {
-                'price': ad.cpm,
-                'impid': imp_id,
-                'id': subbid_id,
-                'crid': ad.id,
-                'cid': ad.id,
-                'adm': ad_markup,
-                'adomain': [urlparse(ad.dest_url).hostname],
-                'nurl':
-                    '%s?ad_id=%s&bid_id=%s&imp_id=%s&price=${AUCTION_PRICE}' % (
-                        app.config['WIN_NOTICE_URL'], ad.id, bid_id, imp_id),
-                'iurl': ad.image_src,
-            }
-        )
+        bids.append({
+            'price': ad.cpm,
+            'impid': imp_id,
+            'id': str(uuid4()),
+            'crid': ad.id,
+            'cid': ad.id,
+            'adm': get_ad_markup(ad, bid_id, imp_id),
+            'adomain': [urlparser.urlparse(ad.dest_url).hostname],
+            'nurl':
+                get_url('WIN_NOTICE_URL',
+                        ad.id, bid_id, imp_id, price='${AUCTION_PRICE}'),
+            'iurl': ad.image_src,
+        })
     if bids:
         bid_response = {
             'id': bid_request['id'],
@@ -89,6 +65,35 @@ def generate_response(bid_request):
     else:
         bid_response = {}
     return bid_id, bid_response, ad_ids
+
+
+def get_url(url_type, ad_id, bid_id, imp_id, **kwargs):
+    # Format various URLs in bid response and ad markup.
+    params ={
+        'ad_id': ad_id,
+        'bid_id': bid_id,
+        'imp_id': imp_id,
+    }
+    params.update(kwargs)
+    return '%s?%s' % (
+        app.config[url_type],
+        '&'.join(['%s=%s' % (k, v) for k, v in params.items()]))
+
+
+def get_ad_markup(ad, bid_id, imp_id):
+    # Return ad markup for given ad.
+    ad_markup = """
+    <a href="%s">
+        <img width="%s" height="%s" src="%s" alt=""/>
+        <img src="%s" border="0" style="display: none;"/>
+    </a>""" % (
+        get_url('CLICK_URL', ad.id, bid_id, imp_id),
+        ad.width,
+        ad.height,
+        ad.image_src,
+        get_url('IMPRESSION_URL', ad.id, bid_id, imp_id),
+    )
+    return ad_markup
 
 
 def persist_request(bid_id):
